@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Search, Menu, X, Download, Star, ChevronLeft, BookMarked, TrendingUp, Clock, Sparkles } from 'lucide-react';
+import { BookOpen, Search, Menu, X, Download, Star, ChevronLeft, BookMarked, TrendingUp, Clock, Sparkles, ArrowRight, Share2, Maximize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Book {
@@ -157,11 +157,12 @@ const Hero = () => {
   );
 };
 
-const BookCard = ({ book }: { book: Book }) => {
+const BookCard = ({ book, onClick }: { book: Book, onClick: () => void }) => {
   return (
     <motion.div 
       whileHover={{ y: -5 }}
-      className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100 flex flex-col h-full group"
+      onClick={onClick}
+      className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100 flex flex-col h-full group cursor-pointer"
     >
       <div className="relative aspect-[2/3] overflow-hidden bg-slate-100">
         <img 
@@ -195,6 +196,7 @@ const BookCard = ({ book }: { book: Book }) => {
             href={book.Link} 
             target="_blank" 
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-300 flex items-center"
           >
             تحميل
@@ -206,7 +208,7 @@ const BookCard = ({ book }: { book: Book }) => {
   );
 };
 
-const BookSection = ({ title, icon, books }: { title: string, icon: React.ReactNode, books: Book[] }) => {
+const BookSection = ({ title, icon, books, onBookSelect }: { title: string, icon: React.ReactNode, books: Book[], onBookSelect: (book: Book) => void }) => {
   if (!books || books.length === 0) return null;
   
   return (
@@ -227,7 +229,7 @@ const BookSection = ({ title, icon, books }: { title: string, icon: React.ReactN
       <div className="px-4 sm:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {books.slice(0, 5).map((book) => (
-            <BookCard key={book.id} book={book} />
+            <BookCard key={book.id} book={book} onClick={() => onBookSelect(book)} />
           ))}
         </div>
       </div>
@@ -239,6 +241,125 @@ const BookSection = ({ title, icon, books }: { title: string, icon: React.ReactN
         </button>
       </div>
     </section>
+  );
+};
+
+const BookDetails = ({ book, onClose, onRead }: { book: Book, onClose: () => void, onRead: () => void }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: '100%' }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: '100%' }}
+      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+      className="fixed inset-0 z-50 paper-texture overflow-y-auto"
+    >
+      {/* Header */}
+      <div className="sticky top-0 z-20 bg-[#fdfbf7]/90 backdrop-blur-md px-4 py-4 flex justify-between items-center border-b border-amber-900/10">
+        <button onClick={onClose} className="p-2 hover:bg-amber-900/5 rounded-full transition-colors flex items-center gap-2 text-amber-900">
+          <ArrowRight className="w-6 h-6" />
+          <span className="font-bold hidden sm:block">العودة للمكتبة</span>
+        </button>
+        <div className="flex gap-2">
+           <button className="p-2 text-amber-900 hover:bg-amber-900/5 rounded-full"><Share2 className="w-5 h-5" /></button>
+           <button className="p-2 text-amber-900 hover:bg-amber-900/5 rounded-full"><BookMarked className="w-5 h-5" /></button>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-8 md:py-16 flex flex-col lg:flex-row gap-12">
+        {/* Right Column: Cover & Actions */}
+        <div className="w-full lg:w-1/3 flex flex-col items-center lg:items-start">
+          <motion.div
+            layoutId={`book-cover-${book.id}`}
+            className="w-2/3 lg:w-full aspect-[2/3] rounded-r-3xl rounded-l-md overflow-hidden relative book-spine"
+          >
+            <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-black/40 to-transparent z-10"></div>
+            <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-r from-white/40 to-transparent z-10"></div>
+            <img src={book.Photo_Link} alt={book.Title} className="w-full h-full object-cover" />
+          </motion.div>
+
+          <div className="w-full mt-8 space-y-4">
+            <button onClick={onRead} className="w-full bg-amber-700 hover:bg-amber-800 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-amber-700/30 flex items-center justify-center gap-3">
+              <BookOpen className="w-6 h-6" />
+              بدء القراءة
+            </button>
+            <a href={book.Link} target="_blank" rel="noopener noreferrer" className="w-full bg-white border-2 border-amber-200 hover:border-amber-700 hover:text-amber-800 text-amber-900 px-8 py-4 rounded-2xl font-bold text-lg transition-colors flex items-center justify-center gap-3">
+              <Download className="w-6 h-6" />
+              تحميل الكتاب ({book.BookSize_TXT})
+            </a>
+          </div>
+
+          {/* Stats */}
+          <div className="w-full grid grid-cols-2 gap-4 mt-8 p-6 bg-amber-50/50 rounded-2xl border border-amber-100">
+            <div className="text-center">
+              <span className="block text-amber-700/60 text-sm mb-1">القسم</span>
+              <span className="font-bold text-amber-900">{book.Section}</span>
+            </div>
+            <div className="text-center">
+              <span className="block text-amber-700/60 text-sm mb-1">التحميلات</span>
+              <span className="font-bold text-amber-900">{book.Download.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Left Column: Details & Reading Preview */}
+        <div className="w-full lg:w-2/3 flex flex-col">
+          <div className="mb-12 text-center lg:text-right border-b border-amber-900/10 pb-8">
+            <h1 className="text-4xl md:text-6xl font-black text-amber-950 mb-4 leading-tight font-sans">{book.Title}</h1>
+            <h2 className="text-2xl text-amber-800/80 font-medium font-sans">تأليف: {book.Writer}</h2>
+          </div>
+
+          {/* Reading Experience for Info */}
+          <div className="relative">
+            <div className="absolute -top-6 -right-6 text-amber-900/5 text-9xl font-serif">"</div>
+            <div className="prose prose-xl prose-amber rtl:prose-invert max-w-none relative z-10">
+              <p className="text-[#4A3F35] leading-[2.2] text-xl md:text-2xl font-medium text-justify font-serif whitespace-pre-line">
+                {book.Info}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const BookReader = ({ book, onClose }: { book: Book, onClose: () => void }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[60] bg-[#1a1a1a] flex flex-col"
+    >
+      {/* Reader Toolbar */}
+      <div className="bg-[#2a2a2a] text-slate-200 px-4 py-3 flex justify-between items-center shadow-xl z-10">
+        <div className="flex items-center gap-4">
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors flex items-center gap-2">
+            <ArrowRight className="w-5 h-5" />
+            <span className="hidden sm:inline">إغلاق القارئ</span>
+          </button>
+        </div>
+        <div className="text-center absolute left-1/2 -translate-x-1/2">
+          <h2 className="font-bold text-lg line-clamp-1">{book.Title}</h2>
+          <span className="text-slate-400 text-xs">{book.Writer}</span>
+        </div>
+        <div className="flex items-center gap-2">
+           <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
+             <Maximize2 className="w-5 h-5" />
+           </button>
+        </div>
+      </div>
+
+      {/* PDF Viewer */}
+      <div className="flex-grow relative bg-[#1a1a1a] w-full h-full overflow-hidden">
+        <iframe
+          src={`https://docs.google.com/viewer?url=${encodeURIComponent(book.Link)}&embedded=true`}
+          className="w-full h-full border-none bg-white"
+          title={`قراءة ${book.Title}`}
+        />
+      </div>
+    </motion.div>
   );
 };
 
@@ -296,6 +417,19 @@ export default function App() {
   const [data, setData] = useState<ApiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [isReading, setIsReading] = useState(false);
+
+  useEffect(() => {
+    if (selectedBook) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedBook]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -366,6 +500,7 @@ export default function App() {
                 title={section.title} 
                 icon={section.icon} 
                 books={data[section.key as keyof ApiData] || []} 
+                onBookSelect={setSelectedBook}
               />
             ))}
           </div>
@@ -373,6 +508,22 @@ export default function App() {
       </main>
       
       <Footer />
+
+      <AnimatePresence>
+        {selectedBook && !isReading && (
+          <BookDetails 
+            book={selectedBook} 
+            onClose={() => setSelectedBook(null)} 
+            onRead={() => setIsReading(true)} 
+          />
+        )}
+        {selectedBook && isReading && (
+          <BookReader 
+            book={selectedBook} 
+            onClose={() => setIsReading(false)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
